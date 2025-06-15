@@ -10,44 +10,22 @@ resource "aws_ecr_repository" "mysql_repo" {
   name = "clo835-mysql"
 }
 
-# resource "aws_iam_role" "ec2_ecr_access" {
-#   name = "ec2-ecr-access-role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Effect = "Allow",
-#       Principal = {
-#         Service = "ec2.amazonaws.com"
-#       },
-#       Action = "sts:AssumeRole"
-#     }]
-#   })
-# }
-
-# resource "aws_iam_role_policy_attachment" "attach_ecr_policy" {
-#   role       = aws_iam_role.ec2_ecr_access.name
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-# }
+resource "aws_key_pair" "generated_key" {
+  key_name   = var.key_name
+  public_key = file(var.public_key_path)
+}
 
 resource "aws_instance" "web_ec2" {
   ami           = "ami-09e6f87a47903347c" # Amazon Linux 2 in us-east-1
   instance_type = "t2.micro"
-  key_name      = var.key_name
+  key_name      = aws_key_pair.generated_key.key_name
 
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   subnet_id              = data.aws_subnet.public_subnet.id
-  # iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-
   tags = {
     Name = "clo835-web-instance"
   }
 }
-
-# resource "aws_iam_instance_profile" "ec2_profile" {
-#   name = "ec2-instance-profile"
-#   role = aws_iam_role.ec2_ecr_access.name
-# }
 
 resource "aws_security_group" "web_sg" {
   name        = "clo835-sg"
